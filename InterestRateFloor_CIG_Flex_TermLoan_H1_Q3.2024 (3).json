@@ -1,0 +1,711 @@
+{
+    "DataElement": {
+        "label": "InterestRateFloor",
+        "metadata": {
+            "version": "Q3.2024",
+            "definition": "For floating rate credit facilities, report the rate floor if one is \ncontained in the credit agreement. If there is no floor, populate with \u2018NONE\u2019. If the credit facility is fixed or entirely fee based (as designated in Field 37) populate \u2018NA\u2019. For facilities with multiple interest rate floors, provide the minimum interest rate floor. For fully undrawn commitments, report the interest rate floor that would apply per the terms of the credit agreement if the credit facility was funded and fully drawn on the reporting date. For fronting exposures, report the interest rate floor based on the rate associated with the fronting facility.  ",
+            "key_terms": "Interest Rate Minimum",
+            "key_context": "Interest Rate Minimum",
+            "requirements": {
+                "unfunded_or_drawn": "nan",
+                "multiple_outstanding": "If more than one floor exist, report the lowest floor",
+                "fronted_facility": "nan",
+                "factoring_facility": "nan",
+                "commitment_letter": "nan"
+            }
+        },
+        "dependent_variables": {
+            "0": "Interest Rate Variability"
+        },
+        "business_context": {
+            "line_of_business": "CIG",
+            "sor": "Flex",
+            "product": "Term Loan",
+            "schedule": "H1"
+        },
+        "instructions": [
+            {
+                "document": {
+                    "source_document": "Underwriting Memo",
+                    "document_priority": "2"
+                },
+                "instruction_steps": [
+                    {
+                        "instruction_1": {
+                            "instruction_type": "collect_document",
+                            "dependent_instructions": "[]",
+                            "algorithm": "NA"
+                        }
+                    },
+                    {
+                        "instruction_2": {
+                            "contains_nested_instructions": "None",
+                            "top_k": "24",
+                            "keywords": "[]",
+                            "nested_condition": "None",
+                            "query": "Determine the pricing details",
+                            "cosine_strategy": "single_query",
+                            "ranking_algorithm": "Cross Encoder",
+                            "where_document_dict": "{}",
+                            "nested_instructions": "None",
+                            "final_top_k": "3",
+                            "instruction_type": "search_rerank",
+                            "dependent_instructions": "['instruction_1']",
+                            "filter_keywords": "[]",
+                            "search_algorithm": "Cosine Similarity"
+                        }
+                    },
+                    {
+                        "instruction_3": {
+                            "contains_nested_instructions": "None",
+                            "top_k": "24",
+                            "keywords": "[]",
+                            "nested_condition": "None",
+                            "query": "Determine the interest rate floor or minimum",
+                            "cosine_strategy": "single_query",
+                            "ranking_algorithm": "Cross Encoder",
+                            "where_document_dict": "{}",
+                            "nested_instructions": "None",
+                            "final_top_k": "3",
+                            "instruction_type": "search_rerank",
+                            "dependent_instructions": "['instruction_1']",
+                            "filter_keywords": "[]",
+                            "search_algorithm": "Cosine Similarity"
+                        }
+                    },
+                    {
+                        "instruction_4": {
+                            "instruction_type": "combine_dedup",
+                            "dependent_instructions": "['instruction_2', 'instruction_3']"
+                        }
+                    },
+                    {
+                        "instruction_5": {
+                            "instruction_type": "create_prompt",
+                            "dependent_instructions": "['']"
+                        }
+                    },
+                    {
+                        "instruction_6": {
+                            "contains_nested_instructions": "True",
+                            "llm_model": "llama-3 8B",
+                            "nested_condition": "Is None==False",
+                            "instruction_type": "prompt_llm",
+                            "dependent_instructions": "['instruction_7', 'instruction_8']",
+                            "prompt_instruction": "Determine the value of floor or minimum interest rate when it is explicitly stated.",
+                            "nested_instructions": [
+                                {
+                                    "instruction_10_1": {
+                                        "instruction_type": "prompt_llm",
+                                        "llm_model": "llama-3 8B",
+                                        "prompt_instruction": "Output in the following format:Answer:[Value: [Matched value],Rationale: [rationale]]",
+                                        "template_category": 1,
+                                        "retrieval_process": "vector_index_search",
+                                        "conditional_filter": false,
+                                        "parent_instruction": [
+                                            "instruction_9_1"
+                                        ],
+                                        "child_instruction": [
+                                            ""
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "instruction_7": {
+                            "contains_nested_instructions": "True",
+                            "llm_model": "llama-3 8B",
+                            "nested_condition": "Is None==True",
+                            "instruction_type": "prompt_llm",
+                            "dependent_instructions": "['instruction_7', 'instruction_8']",
+                            "prompt_instruction": "Determine the value of floor or minimum interest rate when it is explicitly stated.",
+                            "nested_instructions": [
+                                {
+                                    "instruction_10_2": {
+                                        "instruction_type": "prompt_llm",
+                                        "llm_model": "llama-3 8B",
+                                        "prompt_instruction": "Identify the exact sentence where the base rate formula exist. return 'NONE' if none.",
+                                        "template_category": 1,
+                                        "retrieval_process": "vector_index_search",
+                                        "conditional_filter": false,
+                                        "parent_instruction": [
+                                            "instruction_9_2"
+                                        ],
+                                        "child_instruction": [
+                                            "instruction_11_1"
+                                        ],
+                                        "contains_nested_instructions": true,
+                                        "nested_condition": "Is None==True",
+                                        "nested_instructions": [
+                                            {
+                                                "instruction_11_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Determine the floor or minimum interest rate. Return in %, bps, or value or 'NONE' if none.",
+                                                    "template_category": 1,
+                                                    "retrieval_process": "vector_index_search",
+                                                    "conditional_filter": false,
+                                                    "parent_instruction": [
+                                                        "instruction_10_2"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_12_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_12_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Output in the following format:Answer:[Value: [Matched value],Rationale: [rationale]]",
+                                                    "template_category": 1,
+                                                    "retrieval_process": "vector_index_search",
+                                                    "conditional_filter": false,
+                                                    "parent_instruction": [
+                                                        "instruction_11_1"
+                                                    ],
+                                                    "child_instruction": [
+                                                        ""
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "instruction_8": {
+                            "contains_nested_instructions": "True",
+                            "llm_model": "llama-3 8B",
+                            "nested_condition": "Is None==True",
+                            "instruction_type": "prompt_llm",
+                            "dependent_instructions": "['instruction_7', 'instruction_8']",
+                            "prompt_instruction": "Determine the value of floor or minimum interest rate when it is explicitly stated.",
+                            "nested_instructions": [
+                                {
+                                    "instruction_10_3": {
+                                        "instruction_type": "prompt_llm",
+                                        "llm_model": "llama-3 8B",
+                                        "prompt_instruction": "Identify the exact sentence where the base rate formula exist. return 'NONE' if none.",
+                                        "template_category": 1,
+                                        "retrieval_process": "vector_index_search",
+                                        "conditional_filter": false,
+                                        "parent_instruction": [
+                                            "instruction_9_3"
+                                        ],
+                                        "child_instruction": [
+                                            "instruction_11_2"
+                                        ],
+                                        "contains_nested_instructions": true,
+                                        "nested_condition": "Is None==False",
+                                        "nested_instructions": [
+                                            {
+                                                "instruction_11_2": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Extract the operands",
+                                                    "template_category": 1,
+                                                    "retrieval_process": "vector_index_search",
+                                                    "conditional_filter": false,
+                                                    "parent_instruction": [
+                                                        "instruction_10_3"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_12_2"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_12_2": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Extract the operators",
+                                                    "template_category": 1,
+                                                    "retrieval_process": "vector_index_search",
+                                                    "conditional_filter": false,
+                                                    "parent_instruction": [
+                                                        "instruction_11_2"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_13_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_13_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Formulate the explicit equation for computing the rate per annum. If none or a different rate, return 'NONE'. Output in the format of {answer: [formula or value]}",
+                                                    "template_category": 1,
+                                                    "retrieval_process": "vector_index_search",
+                                                    "conditional_filter": false,
+                                                    "parent_instruction": [
+                                                        "instruction_12_2"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_14_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_14_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "List each entity or financial variable in the context, and output on list format for example [variable 1, etc]",
+                                                    "template_category": 1,
+                                                    "retrieval_process": "vector_index_search",
+                                                    "conditional_filter": false,
+                                                    "parent_instruction": [
+                                                        "instruction_13_1"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_15_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_15_1": {
+                                                    "instruction_type": "search_rerank",
+                                                    "query": "Determine the entity {}",
+                                                    "search_algorithm": "Cosine Similarity",
+                                                    "ranking_algorithm": "Cross Encoder",
+                                                    "topK": 24,
+                                                    "final_topK": 3,
+                                                    "cosine_strategy": "single_query",
+                                                    "keywords": [],
+                                                    "filter_keywords": [],
+                                                    "where_document_dict": {},
+                                                    "parent_instruction": [
+                                                        "instruction_14_1"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_16_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_16_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Determine the value of {entity}",
+                                                    "template_category": 1,
+                                                    "retrieval_process": "vector_index_search",
+                                                    "conditional_filter": false,
+                                                    "parent_instruction": [
+                                                        "instruction_15_1"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_16_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_17_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Determine the floor or minimum interest rate. Return in %, bps, or value or 'NONE' if none.",
+                                                    "template_category": 1,
+                                                    "retrieval_process": "vector_index_search",
+                                                    "conditional_filter": false,
+                                                    "parent_instruction": [
+                                                        "instruction_16_1"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_18_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_18_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Output in the following format:Answer:[Value: [Matched value],Rationale: [rationale]]",
+                                                    "template_category": 1,
+                                                    "retrieval_process": "vector_index_search",
+                                                    "conditional_filter": false,
+                                                    "parent_instruction": [
+                                                        "instruction_17_1"
+                                                    ],
+                                                    "child_instruction": [
+                                                        ""
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "instruction_9": {
+                            "instruction_type": "return_output",
+                            "dependent_instructions": "['instruction_9_1', 'instruction_9_2', 'instruction_9_3']"
+                        }
+                    }
+                ]
+            },
+            {
+                "document": {
+                    "source_document": "Credit Agreement",
+                    "document_priority": "1"
+                },
+                "instruction_steps": [
+                    {
+                        "instruction_1": {
+                            "instruction_type": "collect_document",
+                            "dependent_instructions": "[]",
+                            "algorithm": "NA"
+                        }
+                    },
+                    {
+                        "instruction_2": {
+                            "contains_nested_instructions": "None",
+                            "top_k": "24",
+                            "keywords": "[]",
+                            "nested_condition": "None",
+                            "query": "Determine the base rate definition",
+                            "cosine_strategy": "single_query",
+                            "ranking_algorithm": "Cross Encoder",
+                            "where_document_dict": "{}",
+                            "nested_instructions": "None",
+                            "final_top_k": "3",
+                            "instruction_type": "search_rerank",
+                            "dependent_instructions": "['instruction_1']",
+                            "filter_keywords": "[]",
+                            "search_algorithm": "Cosine Similarity"
+                        }
+                    },
+                    {
+                        "instruction_3": {
+                            "contains_nested_instructions": "None",
+                            "top_k": "24",
+                            "keywords": "[]",
+                            "nested_condition": "None",
+                            "query": "Determine the SOFR section or clause",
+                            "cosine_strategy": "single_query",
+                            "ranking_algorithm": "Cross Encoder",
+                            "where_document_dict": "{}",
+                            "nested_instructions": "None",
+                            "final_top_k": "3",
+                            "instruction_type": "search_rerank",
+                            "dependent_instructions": "['instruction_1']",
+                            "filter_keywords": "[]",
+                            "search_algorithm": "Cosine Similarity"
+                        }
+                    },
+                    {
+                        "instruction_4": {
+                            "contains_nested_instructions": "None",
+                            "top_k": "24",
+                            "keywords": "[]",
+                            "nested_condition": "None",
+                            "query": "Determine the interest rate floor or minimum",
+                            "cosine_strategy": "single_query",
+                            "ranking_algorithm": "Cross Encoder",
+                            "where_document_dict": "{}",
+                            "nested_instructions": "None",
+                            "final_top_k": "3",
+                            "instruction_type": "search_rerank",
+                            "dependent_instructions": "['instruction_1']",
+                            "filter_keywords": "[]",
+                            "search_algorithm": "Cosine Similarity"
+                        }
+                    },
+                    {
+                        "instruction_5": {
+                            "contains_nested_instructions": "None",
+                            "top_k": "24",
+                            "keywords": "[]",
+                            "nested_condition": "None",
+                            "query": "Determine the Floor Definition section",
+                            "cosine_strategy": "single_query",
+                            "ranking_algorithm": "Cross Encoder",
+                            "where_document_dict": "{}",
+                            "nested_instructions": "None",
+                            "final_top_k": "3",
+                            "instruction_type": "search_rerank",
+                            "dependent_instructions": "['instruction_1']",
+                            "filter_keywords": "[]",
+                            "search_algorithm": "Cosine Similarity"
+                        }
+                    },
+                    {
+                        "instruction_6": {
+                            "contains_nested_instructions": "None",
+                            "top_k": "24",
+                            "keywords": "[]",
+                            "nested_condition": "None",
+                            "query": "Determine the Benchmark Replacement Section",
+                            "cosine_strategy": "single_query",
+                            "ranking_algorithm": "Cross Encoder",
+                            "where_document_dict": "{}",
+                            "nested_instructions": "None",
+                            "final_top_k": "3",
+                            "instruction_type": "search_rerank",
+                            "dependent_instructions": "['instruction_1']",
+                            "filter_keywords": "[]",
+                            "search_algorithm": "Cosine Similarity"
+                        }
+                    },
+                    {
+                        "instruction_7": {
+                            "instruction_type": "combine_dedup",
+                            "dependent_instructions": "['instruction_2', 'instruction_3', 'instruction_4', 'instruction_5', 'instruction_6']"
+                        }
+                    },
+                    {
+                        "instruction_8": {
+                            "instruction_type": "create_prompt",
+                            "dependent_instructions": "['']"
+                        }
+                    },
+                    {
+                        "instruction_9": {
+                            "contains_nested_instructions": "True",
+                            "llm_model": "llama-3 8B",
+                            "nested_condition": "Is None==False",
+                            "instruction_type": "prompt_llm",
+                            "dependent_instructions": "['instruction_7', 'instruction_8']",
+                            "prompt_instruction": "Determine the value of floor or minimum interest rate when it is explicitly stated.",
+                            "nested_instructions": [
+                                {
+                                    "instruction_10_1": {
+                                        "instruction_type": "prompt_llm",
+                                        "llm_model": "llama-3 8B",
+                                        "prompt_instruction": "Output in the following format:Answer:[Value: [Matched value],Rationale: [rationale]]",
+                                        "parent_instruction": [
+                                            "instruction_9_1"
+                                        ],
+                                        "child_instruction": [
+                                            ""
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "instruction_10": {
+                            "contains_nested_instructions": "True",
+                            "llm_model": "llama-3 8B",
+                            "nested_condition": "Is None==True",
+                            "instruction_type": "prompt_llm",
+                            "dependent_instructions": "['instruction_7', 'instruction_8']",
+                            "prompt_instruction": "Determine the value of floor or minimum interest rate when it is explicitly stated.",
+                            "nested_instructions": [
+                                {
+                                    "instruction_10_2": {
+                                        "instruction_type": "prompt_llm",
+                                        "llm_model": "llama-3 8B",
+                                        "prompt_instruction": "Identify the exact sentence where the base rate formula exist. return 'NONE' if none.",
+                                        "parent_instruction": [
+                                            "instruction_9_2"
+                                        ],
+                                        "child_instruction": [
+                                            "instruction_11_1"
+                                        ],
+                                        "contains_nested_instructions": true,
+                                        "nested_condition": "Is None==True",
+                                        "nested_instructions": [
+                                            {
+                                                "instruction_11_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Determine the floor or minimum interest rate. Return in %, bps, or value or 'NONE' if none.",
+                                                    "parent_instruction": [
+                                                        "instruction_10_2"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_12_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_12_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Output in the following format:Answer:[Value: [Matched value],Rationale: [rationale]]",
+                                                    "parent_instruction": [
+                                                        "instruction_11_1"
+                                                    ],
+                                                    "child_instruction": [
+                                                        ""
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "instruction_11": {
+                            "contains_nested_instructions": "True",
+                            "llm_model": "llama-3 8B",
+                            "nested_condition": "Is None==True",
+                            "instruction_type": "prompt_llm",
+                            "dependent_instructions": "['instruction_7', 'instruction_8']",
+                            "prompt_instruction": "Determine the value of floor or minimum interest rate when it is explicitly stated.",
+                            "nested_instructions": [
+                                {
+                                    "instruction_10_3": {
+                                        "instruction_type": "prompt_llm",
+                                        "llm_model": "llama-3 8B",
+                                        "prompt_instruction": "Identify the exact sentence where the base rate formula exist. return 'NONE' if none.",
+                                        "parent_instruction": [
+                                            "instruction_9_3"
+                                        ],
+                                        "child_instruction": [
+                                            "instruction_11_2"
+                                        ],
+                                        "contains_nested_instructions": true,
+                                        "nested_condition": "Is None==False",
+                                        "nested_instructions": [
+                                            {
+                                                "instruction_11_2": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Extract the operands",
+                                                    "parent_instruction": [
+                                                        "instruction_10_3"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_12_2"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_12_2": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Extract the operators",
+                                                    "parent_instruction": [
+                                                        "instruction_11_2"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_13_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_13_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Formulate the explicit equation for computing the rate per annum. If none or a different rate, return 'NONE'. Output in the format of {answer: [formula or value]}",
+                                                    "parent_instruction": [
+                                                        "instruction_12_2"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_14_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_14_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "List each entity or financial variable in the context, and output on list format for example [variable 1, etc]",
+                                                    "parent_instruction": [
+                                                        "instruction_13_1"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_15_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_15_1": {
+                                                    "instruction_type": "search_rerank",
+                                                    "query": "Determine the entity {}",
+                                                    "search_algorithm": "Cosine Similarity",
+                                                    "ranking_algorithm": "Cross Encoder",
+                                                    "topK": 24,
+                                                    "final_topK": 3,
+                                                    "cosine_strategy": "single_query",
+                                                    "keywords": [],
+                                                    "filter_keywords": [],
+                                                    "where_document_dict": {},
+                                                    "parent_instruction": [
+                                                        "instruction_14_1"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_16_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_16_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Determine the value of {entity}",
+                                                    "template_category": 1,
+                                                    "retrieval_process": "vector_index_search",
+                                                    "conditional_filter": false,
+                                                    "parent_instruction": [
+                                                        "instruction_15_1"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_16_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_17_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Determine the floor or minimum interest rate. Return in %, bps, or value or 'NONE' if none.",
+                                                    "template_category": 1,
+                                                    "retrieval_process": "vector_index_search",
+                                                    "conditional_filter": false,
+                                                    "parent_instruction": [
+                                                        "instruction_16_1"
+                                                    ],
+                                                    "child_instruction": [
+                                                        "instruction_18_1"
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "instruction_18_1": {
+                                                    "instruction_type": "prompt_llm",
+                                                    "llm_model": "llama-3 8B",
+                                                    "prompt_instruction": "Output in the following format:Answer:[Value: [Matched value],Rationale: [rationale]]",
+                                                    "template_category": 1,
+                                                    "retrieval_process": "vector_index_search",
+                                                    "conditional_filter": false,
+                                                    "parent_instruction": [
+                                                        "instruction_17_1"
+                                                    ],
+                                                    "child_instruction": [
+                                                        ""
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "instruction_12": {
+                            "instruction_type": "return_output",
+                            "dependent_instructions": "['instruction_9_1', 'instruction_9_2', 'instruction_9_3']"
+                        }
+                    }
+                ]
+            },
+            {
+                "OutputGenerator": {
+                    "endpoint": "InterestRateFloor"
+                }
+            }
+        ]
+    }
+}
